@@ -16,10 +16,11 @@ char *pad(char* str, int to) {
 }
 
 int listDir(char *path, char *tabs) {
-    if(strlen(tabs) > 20) return;  // max recursion depth = 10
+    if(strlen(tabs) > 20) return; // max recursion depth = 10
     DIR* here = opendir(path);
     struct dirent *element = readdir(here);
     int sumsize = 0;
+    int first = 1;
     while(element != NULL) {
         if(strcmp(element->d_name, ".") && strcmp(element->d_name, "..")) {
             struct stat *info = (struct stat *)malloc(sizeof(struct stat));
@@ -29,23 +30,24 @@ int listDir(char *path, char *tabs) {
             strcat(fullpath, element->d_name);
             stat(fullpath, info);
             int isdir = S_ISDIR(info->st_mode);
-	    char *extname = (char *)malloc(39);
-	    strcpy(extname, tabs);
-	    strncat(extname, element->d_name, 35 - strlen(tabs));
-	    if(strlen(extname) == 35) {
-	      strcat(extname, "...");
-	    }
-            char *padded = pad(extname, 38);
-	    if(!isdir)
-	      printf("%s  file  %dB\n", padded, info->st_size);
-	    else
-	      printf("%s  dir\n", padded);
+            char *extname = (char *)malloc(44);
+            strcpy(extname, tabs);
+            strcat(extname, first ? "└> " : "   ");
+            strncat(extname, element->d_name, 35 - strlen(tabs));
+            if(strlen(extname) >= 38) {
+                strcat(extname, "...");
+            }
+            char *padded = pad(extname, first ? 45 : 43);
+            if(!isdir)
+                printf("%s  file  %dB\n", padded, info->st_size);
+            else
+                printf("%s  dir\n", padded);
             fflush(stdout);
             free(padded);
             if(isdir) {
                 char *newTabs = (char *)malloc(strlen(tabs) + 3);
                 strcpy(newTabs, tabs);
-                strcat(newTabs, "  ");
+                strcat(newTabs, "   ");
                 sumsize += listDir(fullpath, newTabs);
                 free(newTabs);
             }
@@ -53,7 +55,8 @@ int listDir(char *path, char *tabs) {
                 sumsize += info->st_size;
             free(info);
             free(fullpath);
-	    free(extname);
+            free(extname);
+            first = 0;
         }
         element = readdir(here);
     }
