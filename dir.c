@@ -17,7 +17,7 @@ char *pad(char* str, int to) {
 
 int listDir(char *path, char *tabs) {
     if(strlen(tabs) > 20) return;  // max recursion depth = 10
-    struct DIR* here = opendir(path);
+    DIR* here = opendir(path);
     struct dirent *element = readdir(here);
     int sumsize = 0;
     while(element != NULL) {
@@ -29,8 +29,17 @@ int listDir(char *path, char *tabs) {
             strcat(fullpath, element->d_name);
             stat(fullpath, info);
             int isdir = S_ISDIR(info->st_mode);
-            char *padded = pad(element->d_name, 15);
-            printf("%s%s  %s\n", tabs, padded, isdir ? "dir" : "file");
+	    char *extname = (char *)malloc(39);
+	    strcpy(extname, tabs);
+	    strncat(extname, element->d_name, 35 - strlen(tabs));
+	    if(strlen(extname) == 35) {
+	      strcat(extname, "...");
+	    }
+            char *padded = pad(extname, 38);
+	    if(!isdir)
+	      printf("%s  file  %dB\n", padded, info->st_size);
+	    else
+	      printf("%s  dir\n", padded);
             fflush(stdout);
             free(padded);
             if(isdir) {
@@ -44,6 +53,7 @@ int listDir(char *path, char *tabs) {
                 sumsize += info->st_size;
             free(info);
             free(fullpath);
+	    free(extname);
         }
         element = readdir(here);
     }
@@ -54,19 +64,7 @@ int listDir(char *path, char *tabs) {
 
 int main() {
     umask(0);
-    setbuf(stdout, NULL);
-    // struct DIR* here = opendir(".");
-    // struct dirent *element = readdir(here);
-    // int sumsize = 0;
-    // while(element != NULL) {
-    //     struct stat info;
-    //     stat(element->d_name, &info);
-    //     int isdir = S_ISDIR(info.st_mode);
-    //
-    //     if(!isdir)
-    //         sumsize += info.st_size;
-    //     element = readdir(here);
-    // }
-    // printf("Total size: %d bytes", sumsize)
-    listDir(".", "");
+    printf("In directory .\n");
+    printf("Total size: %dB", listDir(".", ""));
+    return 0;
 }
